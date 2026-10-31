@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'">
+<title>PastaClaw · Backport Operations</title>
+<style>
+:root{--bg:#0b1020;--panel:#131b31;--line:#263252;--line2:#202b47;--text:#eef2ff;--muted:#91a0c2;--blue:#7c9cff;--green:#43d19e;--red:#ff6f86;--amber:#ffc86b;--item:#0f172b;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--s6:#008300;--gray:#5b6784;--gray2:#3a4560;--grid:#24304d;--good:#0ca30c;--warning:#fab219;--critical:#d03b3b}
+@media(prefers-color-scheme:light){:root{--bg:#f4f7fb;--panel:#fff;--line:#d9e1ef;--line2:#e5eaf2;--text:#182033;--muted:#63708a;--blue:#4263c5;--green:#087f5b;--red:#c92a2a;--amber:#9a6400;--item:#f8faff;
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--s6:#008300;--gray:#9aa5bb;--gray2:#cfd6e4;--grid:#e3e8f1}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:56px}
+body{margin:0;background:radial-gradient(900px 420px at 15% -10%,#1e315f 0%,transparent 65%),var(--bg);color:var(--text);font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+@media(prefers-color-scheme:light){body{background:linear-gradient(140deg,#e8efff,#f8fafc 55%,#eef3fb)}}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+main{max-width:1320px;margin:auto;padding:34px 24px 72px}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:18px}
+.eyebrow{color:var(--blue);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:11px}
+h1{font-size:32px;line-height:1.1;margin:7px 0}
+.sub,.muted{color:var(--muted)}
+.status{border:1px solid #2e6d5b;background:#12372f;color:var(--green);padding:8px 14px;border-radius:999px;font-weight:700;white-space:nowrap}
+.status.warn{border-color:#6d5a2e;background:#3a2f12;color:var(--amber)}
+.status.bad{border-color:#703346;background:#401d2b;color:var(--red)}
+@media(prefers-color-scheme:light){.status{background:#dff7ee;border-color:#9bdcc6;color:#087f5b}.status.warn{background:#fff2d6;border-color:#f0d08f;color:#8a5a00}.status.bad{background:#ffe3e8;border-color:#f0a7b5;color:#b4233d}}
+.age{font-weight:700}.age.bad{color:var(--red)}
+nav{position:sticky;top:0;z-index:20;display:flex;gap:4px;overflow-x:auto;padding:8px 0;margin:0 0 18px;background:var(--bg);border-bottom:1px solid var(--line);scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav a{padding:6px 12px;border-radius:999px;color:var(--muted);font-weight:600;white-space:nowrap;font-size:13px}
+nav a:hover,nav a.on{background:var(--panel);color:var(--text);text-decoration:none}
+section.sec{margin-bottom:34px}
+section.sec>h2{font-size:21px;margin:0 0 14px;letter-spacing:-.01em}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.card,.panel{background:linear-gradient(145deg,#182340,#11192e);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 40px #05091455}
+@media(prefers-color-scheme:light){.card,.panel{background:#fff;box-shadow:0 10px 26px rgba(37,56,88,.12)}}
+.card{padding:15px 16px;min-width:0}
+.label{color:var(--muted);font-size:12px}
+.value{font-size:28px;font-weight:760;letter-spacing:-.04em;margin-top:4px;line-height:1.15}
+.value small{font-size:14px;color:var(--muted);font-weight:600;letter-spacing:0}
+.card .foot{font-size:12px;color:var(--muted);margin-top:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.panel{padding:18px;margin-bottom:16px;min-width:0}
+.panel h3{font-size:16px;margin:0 0 12px}
+.panel h3 span{font-size:12px;color:var(--muted);font-weight:500;margin-left:8px}
+.panel h4{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:16px 0 7px}
+.metric{display:flex;justify-content:space-between;gap:12px;color:var(--muted);padding:6px 0;border-bottom:1px solid var(--line2)}
+.metric b{color:var(--text);text-align:right}
+.metric>*{min-width:0;overflow-wrap:anywhere}
+.pill{display:inline-block;font-size:11px;border-radius:999px;padding:2px 8px;background:#24345d;color:#b7c8ff;white-space:nowrap;font-weight:600;line-height:1.6}
+.pill.ok{background:#12372f;color:var(--green)}.pill.warn{background:#3a2f12;color:var(--amber)}.pill.bad{background:#401d2b;color:var(--red)}.pill.muted{background:#1d2640;color:var(--muted)}
+@media(prefers-color-scheme:light){.pill{background:#e7edff;color:#3853a0}.pill.ok{background:#dff7ee;color:#087f5b}.pill.warn{background:#fff0d2;color:#8a5a00}.pill.bad{background:#ffe3e8;color:#b4233d}.pill.muted{background:#eef1f6;color:#63708a}}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+code{color:#b7c8ff}@media(prefers-color-scheme:light){code{color:#3853a0}}
+.checks{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.check{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border-radius:10px;background:var(--item);border:1px solid var(--line2)}
+.check .nm{font-weight:650}.check .dt{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.ico{flex:none;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;margin-top:1px}
+.ico.ok{background:var(--good)}.ico.warn{background:var(--warning);color:#2a1d00}.ico.fail,.ico.down{background:var(--critical)}
+.tbl{min-width:0}
+.tbl-ctl{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;align-items:center}
+.tbl-ctl input,.tbl-ctl select{background:var(--item);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 9px;font:inherit;font-size:13px}
+.tbl-ctl input{flex:1;min-width:150px;max-width:340px}
+.tbl-ctl .cnt{color:var(--muted);font-size:12px;margin-left:auto}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap;user-select:none}
+th.s{cursor:pointer}th.s:hover{color:var(--text)}th.on::after{content:" ▾";color:var(--blue)}th.on.asc::after{content:" ▴"}
+td{padding:6px 8px;border-bottom:1px solid var(--line2);vertical-align:top}
+td.n,th.n{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+td.w{min-width:220px;overflow-wrap:anywhere}td.nw{white-space:nowrap}
+tr.x{cursor:pointer}tr.x:hover td{background:color-mix(in srgb,var(--blue) 6%,transparent)}
+tr.x td:first-child::before{content:"▸ ";color:var(--muted)}tr.x.open td:first-child::before{content:"▾ "}
+tr.detail>td{background:var(--item);padding:10px 12px}
+.more{margin-top:8px;background:none;border:1px solid var(--line);color:var(--blue);border-radius:8px;padding:5px 10px;font:inherit;font-size:12px;cursor:pointer}
+.ts{border-bottom:1px dotted var(--muted);cursor:help;white-space:nowrap}
+.chart{width:100%;min-height:40px}
+.chart svg,.spark{display:block;overflow:visible}
+.chart text{fill:var(--muted);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin:2px 0 8px}
+.legend i,.sw{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.stack{display:flex;gap:2px;height:16px;border-radius:5px;overflow:hidden;background:var(--gray2)}
+.stack>span{display:block;height:100%;min-width:2px}
+.vrow{margin:10px 0 16px}
+.vrow .hd{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.strip{position:relative;height:22px;border-radius:6px;background:var(--gray2);overflow:hidden}
+.strip span{position:absolute;top:0;bottom:0;background:var(--good)}
+.axis{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:3px}
+.hm td{padding:0;border:1px solid var(--line2);min-width:20px;height:20px;text-align:center;font-size:10px;color:var(--text)}
+.hm td.k{padding:2px 8px;text-align:left;white-space:nowrap;font-size:12px;border:none;border-bottom:1px solid var(--line2)}
+.hm th{font-size:10px;padding:2px;text-align:center}
+#tip{position:fixed;z-index:50;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px;box-shadow:0 10px 30px #0008;max-width:320px;display:none;line-height:1.45}
+#tip b{font-weight:650}
+.items{width:100%}
+.kv{display:grid;grid-template-columns:max-content 1fr;gap:3px 14px;font-size:13px}
+.kv dt{color:var(--muted)}.kv dd{margin:0;overflow-wrap:anywhere}
+.foot{color:var(--muted);font-size:12px;margin-top:24px}
+.err{color:var(--red);font-weight:600}
+.big{font-size:22px;font-weight:750}
+@media(max-width:1000px){.cards{grid-template-columns:repeat(3,1fr)}.grid3{grid-template-columns:1fr 1fr}}
+@media(max-width:800px){.grid2,.grid3{grid-template-columns:1fr}}
+@media(max-width:560px){main{padding:20px 12px 60px}.top{display:block}.status{display:inline-block;margin-top:12px}.cards{grid-template-columns:repeat(2,1fr);gap:8px}.card{padding:12px}.value{font-size:22px}h1{font-size:26px}.panel{padding:14px}.checks{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<header class="top">
+  <div>
+    <div class="eyebrow">PastaClaw · Backport operations</div>
+    <h1>Bitcoin → Dash backports</h1>
+    <div id="meta" class="sub">Loading live telemetry…</div>
+  </div>
+  <div id="status" class="status">● CONNECTING</div>
+</header>
+<nav id="nav">
+  <a href="#overview">Overview</a><a href="#pipeline">Pipeline</a><a href="#history">History</a><a href="#runs">Runs &amp; lanes</a><a href="#quota">Quota</a><a href="#planner">Planner</a><a href="#events">Events</a>
+</nav>
+<div id="app"></div>
+<div class="foot">Auto-refreshes every 60 seconds · derived from the private backportsys database, sanitized (seat accounts aliased; no paths, tokens or prompts) · <span id="updated"></span></div>
+</main>
+<div id="tip"></div>
+<script>
+"use strict";
+const STALE_MIN = 20, REFRESH_MS = 60000;
+const S = {d: null, tables: {}, charts: {}, err: null};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+const blank = v => v === null || v === undefined || v === "";
+const isNum = v => !blank(v) && !isNaN(+v);
+const num = v => isNum(v) ? (+v).toLocaleString("en-US") : "—";
+const axisNum = v => v >= 1000 ? tok(v) : Number.isInteger(v) ? String(v) : v.toFixed(1);
+const tok = v => { if (!isNum(v)) return "—"; v = +v; const a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(2) + "B" : a >= 1e6 ? (v / 1e6).toFixed(1) + "M" : a >= 1e3 ? (v / 1e3).toFixed(1) + "k" : String(Math.round(v)); };
+const usd = v => isNum(v) ? "$" + (+v).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2}) : "—";
+const pct = (v, d = 0) => isNum(v) ? (v * 100).toFixed(d) + "%" : "—";
+const fix = (v, d = 2) => isNum(v) ? (+v).toFixed(d) : "—";
+function dur(s) {
+  if (!isNum(s)) return "—"; s = Math.round(+s);
+  if (s < 60) return s + "s";
+  const m = Math.floor(s / 60); if (m < 60) return m + "m " + (s % 60) + "s";
+  const h = Math.floor(m / 60); if (h < 48) return h + "h " + (m % 60) + "m";
+  return Math.floor(h / 24) + "d " + (h % 24) + "h";
+}
+const ms = ts => ts ? Date.parse(ts) : NaN;
+const ageS = ts => (Date.now() - ms(ts)) / 1000;
+function ago(ts) {
+  if (!ts || isNaN(ms(ts))) return "—";
+  const s = ageS(ts), f = Math.abs(s);
+  const t = f < 60 ? Math.round(f) + " s" : f < 3600 ? Math.round(f / 60) + " min" : f < 172800 ? (f / 3600).toFixed(f < 36000 ? 1 : 0) + " h" : Math.round(f / 86400) + " d";
+  return s >= -5 ? t + " ago" : "in " + t;
+}
+const abs = ts => !blank(ts) && !isNaN(new Date(ts)) ? new Date(ts).toISOString().replace("T", " ").replace(/\.\d+Z$/, " UTC") : "";
+const when = ts => ts ? `<span class="ts" title="${esc(abs(ts))}">${esc(ago(ts))}</span>` : `<span class="muted">—</span>`;
+const pill = (t, c = "") => `<span class="pill ${c}">${esc(t)}</span>`;
+const short = (s, n) => { s = String(s ?? ""); return s.length > n ? s.slice(0, n - 1) + "…" : s; };
+
+/* ---- links (public GitHub references only) ---- */
+const repos = () => S.d.system.repos;
+const ext = (href, html) => `<a href="${href}" target="_blank" rel="noopener">${html}</a>`;  // href: built from escaped parts only
+const ghLink = (repo, kind, n, label) => n ? ext(`https://github.com/${esc(repo)}/${kind}/${encodeURIComponent(n)}`, esc(label)) : `<span class="muted">—</span>`;
+const btc = (n, repo) => { repo = repo || repos().bitcoin; return ghLink(repo, "pull", n, (repo === "bitcoin/bitcoin" ? "bitcoin" : repo.split("/").pop()) + "#" + n); };
+const forkPr = n => ghLink(repos().fork, "pull", n, "fork#" + n);
+const upPr = n => ghLink(repos().upstream, "pull", n, "dash#" + n);
+const trk = n => ghLink(repos().tracker, "issues", n, "tracker#" + n);
+const linkRefs = t => esc(t).replace(/\bbitcoin#(\d+)/g, (m, n) => ext(`https://github.com/bitcoin/bitcoin/pull/${n}`, m)).replace(/\bdashpay\/dash#(\d+)/g, (m, n) => ext(`https://github.com/dashpay/dash/pull/${n}`, m));
+const batchLinks = (b, sep) => [b.upstream_pr ? upPr(b.upstream_pr) : "", b.fork_pr ? forkPr(b.fork_pr) : "", b.tracker_issue ? trk(b.tracker_issue) : ""].filter(Boolean).join(sep) || `<span class="muted">—</span>`;
+
+/* ---- status → class ---- */
+const CLS = {
+  batch: {merged: "ok", ci_pending: "warn", ci_failed: "bad", blocked: "bad", paused: "warn", approved: "muted", proposed: "muted", closed: "muted", abandoned: "bad"},
+  run: {done: "ok", failed: "bad", timed_out: "bad", cancelled: "muted", paused: "warn"},
+  item: {landed: "ok", failed: "bad", skipped: "muted", queued: "muted"},
+  gate: {pass: "ok", warn: "warn", fail: "bad"},
+  cand: {done: "ok", blocked: "warn", pending: "muted", skipped: "muted", irrelevant: "muted"},
+};
+const sp = (kind, v) => v ? pill(v, Object.hasOwn(CLS[kind], v) ? CLS[kind][v] : "") : `<span class="muted">—</span>`;
+// key order is stacking order
+const CAND_COLORS = {done: "var(--s1)", batched: "var(--s2)", planned: "var(--s3)", blocked: "var(--s4)", pending: "var(--s5)", skipped: "var(--gray)", irrelevant: "var(--gray2)"};
+const GATE_COLORS = {pass: "var(--good)", warn: "var(--warning)", fail: "var(--critical)"};
+const CI_COLORS = {success: "var(--good)", failure: "var(--critical)", timed_out: "var(--s2)", cancelled: "var(--gray)", skipped: "var(--gray2)", pending: "var(--s1)"};
+const SERIES = ["var(--s1)", "var(--s2)", "var(--s3)", "var(--s4)", "var(--s5)", "var(--s6)"];
+
+/* ---- sortable / filterable tables ---- */
+function tbl(id, cfg) {
+  const st = S.tables[id] || (S.tables[id] = {sort: cfg.sort ?? null, desc: cfg.desc ?? true, q: "", f: {}, open: new Set(), all: false});
+  st.cfg = cfg;
+  const ctl = [];
+  if (cfg.search) ctl.push(`<input type="search" class="tbl-q" data-id="${id}" placeholder="${esc(cfg.search === true ? "Filter…" : cfg.search)}" value="${esc(st.q)}">`);
+  for (const f of cfg.filters || []) {
+    const vals = [...new Set(cfg.rows.map(r => r[f.k]).filter(v => !blank(v)))].sort();
+    ctl.push(`<select class="tbl-f" data-id="${id}" data-k="${esc(f.k)}"><option value="">${esc(f.label)}: all</option>${vals.map(v => `<option${String(st.f[f.k]) === String(v) ? " selected" : ""}>${esc(v)}</option>`).join("")}</select>`);
+  }
+  if (ctl.length) ctl.push(`<span class="cnt" id="cnt-${id}"></span>`);
+  return `<div class="tbl" data-id="${id}">${ctl.length ? `<div class="tbl-ctl">${ctl.join("")}</div>` : ""}<div class="tbl-body" id="tb-${id}">${tblBody(id)}</div></div>`;
+}
+function tblRows(id) {
+  const st = S.tables[id], cfg = st.cfg;
+  let rows = cfg.rows.slice();
+  for (const [k, v] of Object.entries(st.f)) if (v !== "") rows = rows.filter(r => String(r[k]) === v);
+  if (st.q) {
+    const q = st.q.toLowerCase();
+    rows = rows.filter(r => (cfg.text ? cfg.text(r) : cfg.cols.map(c => c.v ? c.v(r) : r[c.k]).join(" ")).toLowerCase().includes(q));
+  }
+  const col = cfg.cols.find(c => c.k === st.sort);
+  if (col) {
+    const val = col.v || (r => r[col.k]);
+    rows.sort((a, b) => {
+      let x = val(a), y = val(b);
+      const xn = blank(x), yn = blank(y);
+      if (xn || yn) return xn && yn ? 0 : xn ? 1 : -1;
+      if (isNum(x) && isNum(y)) { x = +x; y = +y; } else { x = String(x).toLowerCase(); y = String(y).toLowerCase(); }
+      return (x < y ? -1 : x > y ? 1 : 0) * (st.desc ? -1 : 1);
+    });
+  }
+  return rows;
+}
+function tblBody(id) {
+  const st = S.tables[id], cfg = st.cfg, rows = tblRows(id);
+  const limit = cfg.limit && !st.all ? cfg.limit : Infinity, shown = rows.slice(0, limit);
+  const head = cfg.cols.map(c => `<th class="${c.num ? "n " : ""}${c.nosort ? "" : "s "}${st.sort === c.k ? "on" + (st.desc ? "" : " asc") : ""}" ${c.nosort ? "" : `data-sort="${esc(c.k)}" data-id="${id}"`}>${esc(c.label)}</th>`).join("");
+  const body = shown.map(r => {
+    const key = cfg.key ? String(cfg.key(r)) : "";
+    const open = cfg.expand && st.open.has(key);
+    const tds = cfg.cols.map(c => `<td class="${c.num ? "n" : ""} ${c.cls || ""}">${c.f ? c.f(r) : esc(r[c.k] ?? "—")}</td>`).join("");
+    const row = `<tr${cfg.expand ? ` class="x${open ? " open" : ""}" data-x="${esc(key)}" data-id="${id}"` : ""}>${tds}</tr>`;
+    return open ? row + `<tr class="detail"><td colspan="${cfg.cols.length}">${cfg.expand(r)}</td></tr>` : row;
+  }).join("");
+  setTimeout(() => { const c = document.getElementById("cnt-" + id); if (c) c.textContent = rows.length === cfg.rows.length ? `${rows.length} rows` : `${rows.length} of ${cfg.rows.length}`; });
+  const more = rows.length > shown.length ? `<button class="more" data-more="${id}">Show all ${rows.length}</button>` : "";
+  if (!rows.length) return `<div class="muted">${esc(cfg.empty || "Nothing to show")}</div>`;
+  return `<div class="scroll"><table><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>${more}`;
+}
+const redraw = id => { const el = document.getElementById("tb-" + id); if (el) el.innerHTML = tblBody(id); };
+document.addEventListener("click", e => {
+  const th = e.target.closest("th[data-sort]");
+  if (th) { const st = S.tables[th.dataset.id]; if (st.sort === th.dataset.sort) st.desc = !st.desc; else { st.sort = th.dataset.sort; st.desc = true; } redraw(th.dataset.id); return; }
+  const mb = e.target.closest("button[data-more]");
+  if (mb) { S.tables[mb.dataset.more].all = true; redraw(mb.dataset.more); return; }
+  if (e.target.closest("a")) return;
+  const tr = e.target.closest("tr.x");
+  if (tr) { const st = S.tables[tr.dataset.id], k = tr.dataset.x; st.open.has(k) ? st.open.delete(k) : st.open.add(k); redraw(tr.dataset.id); }
+});
+document.addEventListener("input", e => { const t = e.target; if (t.classList.contains("tbl-q")) { S.tables[t.dataset.id].q = t.value; redraw(t.dataset.id); } });
+document.addEventListener("change", e => { const t = e.target; if (t.classList.contains("tbl-f")) { S.tables[t.dataset.id].f[t.dataset.k] = t.value; redraw(t.dataset.id); } });
+
+/* ---- tooltip ---- */
+const tip = $("#tip");
+function showTip(el, x, y) {
+  tip.innerHTML = el.dataset.tip; tip.style.display = "block";
+  const r = tip.getBoundingClientRect();
+  let left = x + 14, top = y + 14;
+  if (left + r.width > innerWidth - 8) left = Math.max(8, x - r.width - 14);
+  if (top + r.height > innerHeight - 8) top = Math.max(8, y - r.height - 14);
+  tip.style.left = left + "px"; tip.style.top = top + "px";
+}
+document.addEventListener("mousemove", e => { const el = e.target.closest("[data-tip]"); el ? showTip(el, e.clientX, e.clientY) : (tip.style.display = "none"); });
+document.addEventListener("touchstart", e => { const el = e.target.closest("[data-tip]"); if (el) { const t = e.touches[0]; showTip(el, t.clientX, t.clientY); } else tip.style.display = "none"; }, {passive: true});
+document.addEventListener("scroll", () => { tip.style.display = "none"; }, {passive: true});
+
+/* ---- charts (inline SVG, drawn at the container's width) ---- */
+function chart(id, spec) { S.charts[id] = spec; return `${legend(spec.series)}<div class="chart" id="c-${id}" style="height:${spec.h || 150}px"></div>`; }
+const legend = series => series.length > 1 ? `<div class="legend">${series.map(s => `<span><i style="background:${s.color}"></i>${esc(s.label)}</span>`).join("")}</div>` : "";
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), m = v / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+function drawBars(el, spec) {
+  const W = Math.max(260, el.clientWidth), H = spec.h || 150, L = 44, B = 20, T = 6, R = 4;
+  const rows = spec.rows, n = rows.length, fmtv = spec.fmt || num;
+  const grouped = spec.stacked === false;
+  const totals = rows.map(r => spec.series.reduce((a, s) => a + (+r[s.k] || 0), 0));
+  const peaks = rows.map(r => Math.max(0, ...spec.series.map(s => +r[s.k] || 0)));
+  const max = niceMax(Math.max(...(grouped ? peaks : totals), 0));
+  const step = (W - L - R) / Math.max(1, n), bw = Math.max(1, Math.min(28, step - 2));
+  const y = v => T + (H - T - B) * (1 - v / max);
+  let g = "";
+  for (const t of [0, max / 2, max]) g += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/><text x="${L - 6}" y="${y(t) + 4}" text-anchor="end">${esc(spec.axis ? spec.axis(t) : axisNum(t))}</text>`;
+  const every = Math.ceil(n / Math.max(2, Math.floor((W - L) / 70)));
+  rows.forEach((r, i) => {
+    const x = L + i * step + (step - bw) / 2;
+    let acc = 0;
+    const sw = grouped ? Math.max(1, bw / spec.series.length) : bw;
+    spec.series.forEach((s, j) => {
+      const v = +r[s.k] || 0; if (!v) return;
+      const base = grouped ? 0 : acc, y0 = y(base), y1 = y(base + v); acc += v;
+      const sx = grouped ? x + j * sw : x;
+      g += `<rect x="${sx}" y="${y1}" width="${Math.max(1, sw - (grouped ? 1 : 0))}" height="${Math.max(1, y0 - y1)}" rx="${Math.min(3, sw / 3)}" fill="${s.color}" stroke="var(--panel)" stroke-width="${!grouped && spec.series.length > 1 ? 1 : 0}"/>`;
+    });
+    if (i % every === 0) g += `<text x="${L + i * step + step / 2}" y="${H - 5}" text-anchor="middle">${esc(String(r.day).slice(5))}</text>`;
+    const lines = spec.series.map(s => `<span class="sw" style="background:${s.color}"></span>${esc(s.label)}: <b>${esc(fmtv(r[s.k] || 0))}</b>`).join("<br>");
+    g += `<rect x="${L + i * step}" y="${T}" width="${step}" height="${H - T - B}" fill="transparent" data-tip="${esc(`<b>${esc(r.day)}</b>` + (spec.series.length > 1 ? ` · total ${esc(fmtv(totals[i]))}` : "") + "<br>" + lines)}"/>`;
+  });
+  el.innerHTML = `<svg width="${W}" height="${H}" role="img" aria-label="${esc(spec.title || "chart")}">${g}</svg>`;
+}
+function drawCharts() { for (const [id, spec] of Object.entries(S.charts)) { const el = document.getElementById("c-" + id); if (el) drawBars(el, spec); } }
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(drawCharts, 150); });
+function spark(points, idx, {w = 150, h = 30, cap = null, color = "var(--s1)", label = ""} = {}) {
+  const pts = points.filter(p => isNum(p[idx]));
+  if (pts.length < 2) return `<span class="muted">—</span>`;
+  const t0 = ms(points[0][0]), t1 = ms(points[points.length - 1][0]) || t0 + 1;
+  const vmax = Math.max(1, ...pts.map(p => +p[idx]));
+  const X = t => 1 + (w - 2) * (ms(t) - t0) / Math.max(1, t1 - t0), Y = v => h - 2 - (h - 4) * (+v / vmax);
+  const d = pts.map((p, i) => (i ? "L" : "M") + X(p[0]).toFixed(1) + "," + Y(p[idx]).toFixed(1)).join("");
+  const last = pts[pts.length - 1], hi = Math.max(...pts.map(p => +p[idx])), lo = Math.min(...pts.map(p => +p[idx]));
+  const capl = cap !== null ? `<line x1="0" x2="${w}" y1="${Y(cap)}" y2="${Y(cap)}" stroke="var(--critical)" stroke-dasharray="3 3" stroke-width="1" opacity=".7"/>` : "";
+  const t = `<b>${esc(label)}</b> (7 d, hourly max)<br>now ${pct(last[idx])} · min ${pct(lo)} · max ${pct(hi)}` + (cap !== null ? `<br>dashed: cap ${pct(cap)}` : "");
+  return `<svg class="spark" width="${w}" height="${h}" data-tip="${esc(t)}"><rect width="${w}" height="${h}" fill="transparent"/>${capl}<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round"/><circle cx="${X(last[0])}" cy="${Y(last[idx])}" r="2.5" fill="${color}"/></svg>`;
+}
+function stack(counts, colors, total) {
+  const order = Object.keys(colors);
+  total = total ?? order.reduce((a, k) => a + (counts[k] || 0), 0);
+  if (!total) return `<div class="stack"></div>`;
+  return `<div class="stack">${order.filter(k => counts[k]).map(k => `<span style="flex:${counts[k]};background:${colors[k]}" data-tip="${esc(`<b>${esc(k)}</b>: ${num(counts[k])} (${(100 * counts[k] / total).toFixed(1)}%)`)}"></span>`).join("")}</div>`;
+}
+
+/* ---- sections ---- */
+const panel = (title, body, sub = "") => `<div class="panel"><h3>${esc(title)}${sub ? ` <span>${sub}</span>` : ""}</h3>${body}</div>`;
+const metric = (k, v) => `<div class="metric"><span>${k}</span><b>${v}</b></div>`;
+const card = (label, value, foot = "") => `<div class="card"><div class="label">${esc(label)}</div><div class="value">${value}</div>${foot ? `<div class="foot">${foot}</div>` : ""}</div>`;
+const sum = o => Object.values(o || {}).reduce((a, b) => a + (+b || 0), 0);
+// a static table; a "#label" head is a right-aligned numeric column, a row is an array of cells
+const cell = (v, cls = "") => `<td${cls ? ` class="${cls}"` : ""}>${v}</td>`;
+const ncell = v => cell(v, "n");
+const table = (heads, rows, empty = "none") => `<div class="scroll"><table><thead><tr>${heads.map(h => h.startsWith("#") ? `<th class="n">${esc(h.slice(1))}</th>` : `<th>${esc(h)}</th>`).join("")}</tr></thead><tbody>${rows.map(r => `<tr>${r.join("")}</tr>`).join("") || `<tr><td colspan="${heads.length}" class="muted">${esc(empty)}</td></tr>`}</tbody></table></div>`;
+
+function overview(d) {
+  const k = d.kpis, h = d.health, hd = d.headroom;
+  const cards = [
+    card("Upstream PRs merged", num(k.upstream_merged.all), `7 d ${num(k.upstream_merged["7d"])} · 30 d ${num(k.upstream_merged["30d"])} · 24 h ${num(k.upstream_merged["24h"])}`),
+    card("Backports merged", num(k.backports_merged.all), `7 d ${num(k.backports_merged["7d"])} · 30 d ${num(k.backports_merged["30d"])} · 24 h ${num(k.backports_merged["24h"])}`),
+    card("Open upstream PRs", `${num(k.open_upstream)} <small>/ ${num(k.upstream_cap)} cap</small>`, `${num(d.pipeline.upstream_open_easy)} on the easy track`),
+    card("Active batches", num(k.active_batches), Object.entries(k.active_by_status).map(([s, n]) => `${esc(s)} ${n}`).join(" · ")),
+    card("Candidates remaining", num(sum(k.candidates_remaining)), Object.entries(k.candidates_remaining).map(([v, n]) => `${esc(v)}: ${num(n)}`).join(" · ") + ` · ${num(k.candidates_done)} done`),
+    card("Opus spend, 7 d", usd(k.spend["7d"].cost_usd), `24 h ${usd(k.spend["24h"].cost_usd)} · 30 d ${usd(k.spend["30d"].cost_usd)} · all ${usd(k.spend.all.cost_usd)}`),
+    card("Opus headroom", hd.open ? `<span style="color:var(--green)">OPEN</span>` : `<span style="color:var(--amber)">CLOSED</span>`, `since ${when(h.headroom_since)}` + (hd.verdict ? ` · excess ${fix(hd.verdict.total_excess)} / ${fix(hd.thresholds.min_excess)}` : "")),
+    card("Active runs", `${num(k.active_runs)} <small>/ ${num(d.system.config.max_concurrent_runs)} slots</small>`, `${num(d.pipeline.pending_actions)} pending action(s) · ${num(d.pipeline.pending_replies)} pending repl${d.pipeline.pending_replies === 1 ? "y" : "ies"}`),
+  ].join("");
+  const checks = h.checks.map(c => `<div class="check"><span class="ico ${c.level}">${c.level === "ok" ? "✓" : c.level === "warn" ? "!" : "✕"}</span><div><div class="nm">${esc(c.name)} ${c.level !== "ok" ? pill(c.level, c.level === "warn" ? "warn" : "bad") : ""}</div><div class="dt">${esc(c.detail)}${c.at ? " · " + when(c.at) : ""}</div></div></div>`).join("");
+  const stuck = h.stuck_runs.length ? `<h4>Runs with a stale heartbeat</h4>` + h.stuck_runs.map(r => metric(`run ${r.id} · batch ${r.batch_id} · ${esc(r.kind)}`, `heartbeat ${when(r.heartbeat_at)}`)).join("") : "";
+  const fr = h.freshness;
+  const fresh = [["quota sample", fr.quota], ["plan tick", fr.plan], ["ci tick", fr.ci], ["dependency map", fr.map], ["balancer write", fr.balancer], ["latest event", h.latest_event_at]].map(([a, b]) => metric(a, when(b))).join("");
+  const streaks = Object.entries(h.error_streaks).map(([t, n]) => metric(esc(t), n ? `<span style="color:${n >= 3 ? "var(--red)" : "var(--amber)"}">${n}</span>` : "0")).join("");
+  return `<section class="sec" id="overview"><h2>Overview</h2><div class="cards">${cards}</div>
+  ${panel("System health", `<div class="checks">${checks}</div>${stuck}`, `${pill(h.status.toUpperCase(), h.status === "ok" ? "ok" : "bad")}`)}
+  <div class="grid2"><div>${versionsPanel(d)}${systemPanel(d)}</div><div>${panel("Freshness", fresh)}${panel("Task error streaks", streaks || `<div class="muted">none recorded</div>`, "consecutive failures per task")}</div></div></section>`;
+}
+function versionsPanel(d) {
+  const rows = d.versions.map(v => {
+    const st = v.statuses, imp = v.sheet_import;
+    const via = v.done_via || {};
+    return `<div class="vrow"><div class="hd"><b>Bitcoin Core ${esc(v.version)}${v.configured ? "" : " " + pill("not configured", "muted")}</b><span class="muted">${num(v.total)} candidates · ${v.complete_pct ?? "—"}% resolved · ${num(v.remaining)} remaining</span></div>
+    ${stack(st, CAND_COLORS, v.total)}
+    <div class="legend" style="margin-top:6px">${Object.keys(CAND_COLORS).filter(s => st[s]).map(s => `<span><i style="background:${CAND_COLORS[s]}"></i>${esc(s)} ${num(st[s])}</span>`).join("")}</div>
+    <div class="muted" style="font-size:12px">done via: sheet ${num(via.sheet || 0)} · marker / already on develop ${num(via.develop || 0)} · merged by the bot ${num(via.bot || 0)}${via.other ? ` · other ${num(via.other)}` : ""}
+    · prerequisites admitted ${num(sum((v.provenance || {}).prerequisite))}
+    ${imp ? `<br>sheet import ${when(imp.at)}: ${imp.stats ? Object.entries(imp.stats).map(([a, b]) => `${esc(a)} ${num(b)}`).join(", ") : "unparsed"}` : "<br>no sheet import recorded"}${v.sheet_error_streak ? ` · <span class="err">sheet errors ${v.sheet_error_streak}</span>` : ""}
+    · batches: ${Object.entries(v.batches).map(([a, b]) => `${esc(a)} ${b}`).join(", ") || "none"}</div></div>`;
+  }).join("");
+  return panel("Per-version progress", rows || `<div class="muted">no versions</div>`, "candidate status by Bitcoin Core release");
+}
+function systemPanel(d) {
+  const s = d.system, c = s.config, r = s.release;
+  return panel("System", `<dl class="kv">
+  <dt>backportsys</dt><dd>v${esc(s.version)}${r ? ` · ${r.ref ? esc(r.ref) + " " : ""}<code>${esc(String(r.sha).slice(0, 10))}</code>${r.deployed_at ? " · deployed " + when(r.deployed_at) : ""}` : ""}</dd>
+  <dt>database schema</dt><dd>${esc(s.db_schema)}</dd>
+  <dt>repos</dt><dd>fork <a href="https://github.com/${esc(s.repos.fork)}" target="_blank" rel="noopener">${esc(s.repos.fork)}</a> · upstream <a href="https://github.com/${esc(s.repos.upstream)}" target="_blank" rel="noopener">${esc(s.repos.upstream)}</a> · tracker <a href="https://github.com/${esc(s.repos.tracker)}" target="_blank" rel="noopener">${esc(s.repos.tracker)}</a></dd>
+  <dt>versions</dt><dd>${s.versions.map(esc).join(", ")}</dd>
+  <dt>switches</dt><dd>pipeline ${c.pipeline_enabled ? "on" : "off"} · balancer ${c.balancer_enabled ? "on" : "off"} · easy track ${c.easy_enabled ? "on" : "off"}</dd>
+  <dt>batches</dt><dd>target ${c.batch_target}, max ${c.batch_max}, upstream min ${c.min_upstream_items}, ${c.max_open_upstream_prs} open upstream max</dd>
+  <dt>lanes</dt><dd>${Object.entries(c.lanes).map(([k, v]) => `${esc(k)}: ${esc(v.model)} (${esc(v.effort)}, ≤${v.max_turns} turns, ≤${usd(v.max_budget_usd)})`).join("<br>")}</dd>
+  </dl>`);
+}
+
+function batchRunCell(r) {
+  if (!r) return `<span class="muted">none</span>`;
+  const live = r.status === "running" || r.status === "spawned";
+  return `${sp("run", r.status)} ${esc(r.kind)} #${esc(r.attempt)}<br><span class="muted">${live ? "heartbeat " + when(r.heartbeat_at) : when(r.finished_at || r.started_at)}${r.note ? " · " + esc(short(r.note, 60)) : ""}</span>`;
+}
+function itemsTable(b) {
+  const gates = ["pick", "build", "tests", "mech", "tree", "verify", "ci_fork", "ci_upstream"];
+  const rows = b.items.map(i => `<tr><td class="nw">${esc(i.position)}</td><td class="nw">${btc(i.number, i.repo)}</td><td class="w">${esc(i.title)}</td><td>${sp("item", i.status)}</td><td class="n">${esc(i.attempts)}</td><td class="nw">${gates.filter(g => i.gates[g]).map(g => `<span class="pill ${CLS.gate[i.gates[g]] || ""}" title="${esc(g)}: ${esc(i.gates[g])}">${esc(g)}</span>`).join(" ") || '<span class="muted">—</span>'}</td><td class="w">${linkRefs(i.reason || "")}${i.folded_from_batch ? ` <span class="muted">(folded from batch ${i.folded_from_batch})</span>` : ""}${i.moved_to_batch ? ` <span class="muted">(moved to batch ${i.moved_to_batch})</span>` : ""}</td></tr>`).join("");
+  const acts = b.actions.length ? `<h4>Pending actions</h4>` + b.actions.map(a => metric(`${esc(a.kind)} ${pill(a.status, a.status === "running" ? "" : "muted")}${a.not_before ? " not before " + when(a.not_before) : ""}`, esc(a.reason))).join("") : "";
+  const r = b.run;
+  const run = r ? `<h4>Latest run</h4><div class="muted">run ${r.id} · ${esc(r.kind)} #${r.attempt} · ${sp("run", r.status)} ${r.fail_kind ? pill(r.fail_kind, "bad") : ""} · started ${when(r.started_at)}${r.finished_at ? " · finished " + when(r.finished_at) + " (" + dur((ms(r.finished_at) - ms(r.started_at)) / 1000) + ")" : " · heartbeat " + when(r.heartbeat_at)}${r.note ? "<br>" + esc(r.note) : ""}${r.reason ? "<br>" + linkRefs(r.reason) : ""}</div>` : "";
+  const meta = `<div class="muted" style="font-size:12px;margin-bottom:6px">branch <code>${esc(b.branch || "—")}</code>${b.base ? ` · base <code>${esc(b.base)}</code>` : ""} · approved by ${esc(b.approved_by || "—")} ${when(b.approved_at)} · ${b.runs} run(s) · ${usd(b.cost_usd)} spent${b.thin_since ? " · thin since " + when(b.thin_since) : ""}${b.hold ? ` · <span class="err">hold: ${esc(b.hold)}</span>` : ""}${b.wake_kind ? ` · waiting on ${esc(b.wake_kind)}${b.wake_ref ? " (" + esc(b.wake_ref) + ")" : ""}` : ""}${b.promotion_capped ? " · promotion deferred (upstream cap)" : ""}</div>`;
+  return meta + (rows ? `<div class="scroll"><table class="items"><thead><tr><th>#</th><th>upstream</th><th>title</th><th>status</th><th class="n">tries</th><th>last gates</th><th>reason</th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="muted">no items</div>`) + run + acts;
+}
+function pipeline(d) {
+  const p = d.pipeline;
+  const order = {running: 0, ci_failed: 1, blocked: 2, paused: 3, ci_pending: 4, promoted: 5, approved: 6, proposed: 7};
+  const counts = b => Object.entries(b.item_counts).map(([s, n]) => `${esc(s)} ${n}`).join(", ");
+  const t = tbl("batches", {
+    rows: p.batches, key: b => b.id, sort: "order", desc: false, search: "Filter batches…",
+    filters: [{k: "status", label: "status"}, {k: "version", label: "version"}],
+    text: b => [b.id, b.name, b.status, b.version, b.blocked_reason, b.hold, ...b.items.map(i => i.number + " " + i.title)].join(" "),
+    expand: itemsTable,
+    cols: [
+      {k: "id", label: "batch", num: true, f: b => esc(b.id)},
+      {k: "name", label: "name", f: b => `${esc(b.name)}${b.track ? " " + pill(b.track) : ""}<br><span class="muted">${esc(b.version)}</span>`},
+      {k: "order", label: "status", v: b => order[b.status] ?? 9, f: b => sp("batch", b.status) + (b.hold ? " " + pill("hold", "bad") : "") + (b.promotion_capped ? " " + pill("capped", "warn") : "")},
+      {k: "items", label: "items", v: b => b.items.length, f: b => `${num(b.items.length)}<br><span class="muted">${counts(b)}</span>`},
+      {k: "links", label: "links", nosort: true, f: b => batchLinks(b, "<br>")},
+      {k: "run", label: "current / last run", v: b => b.run ? b.run.id : null, f: b => batchRunCell(b.run)},
+      {k: "why", label: "blocked / waiting", v: b => b.blocked_reason || b.wake_kind || "", cls: "w", f: b => b.blocked_reason ? linkRefs(b.blocked_reason) + (b.blocked_since ? " · " + when(b.blocked_since) : "") : b.wake_kind ? "waiting on " + esc(b.wake_kind) : b.actions.length ? b.actions.map(a => `${esc(a.kind)} ${esc(a.status)}`).join(", ") : '<span class="muted">—</span>'},
+      {k: "created_at", label: "age", f: b => when(b.created_at)},
+      {k: "updated_at", label: "updated", f: b => when(b.updated_at)},
+      {k: "cost_usd", label: "spent", num: true, f: b => usd(b.cost_usd)},
+    ],
+    empty: "No live batches",
+  });
+  const runs = p.active_runs.map(r => {
+    const stale = ageS(r.heartbeat_at || r.started_at) > d.system.config.heartbeat_stale_minutes * 60;
+    return `<div class="metric"><span>run ${r.id} · batch ${r.batch_id} · ${esc(r.kind)} #${r.attempt} ${sp("run", r.status)}<br><span style="font-size:12px">${esc(r.note || r.phase || "")}</span></span><b>${dur(ageS(r.started_at))} elapsed<br><span style="font-size:12px;color:${stale ? "var(--red)" : "var(--muted)"}">heartbeat ${when(r.heartbeat_at)}</span></b></div>`;
+  }).join("") || `<div class="muted">No active runs</div>`;
+  return `<section class="sec" id="pipeline"><h2>Pipeline</h2>
+  ${panel("Active runs", runs, `${p.active_runs.length} in flight · ${d.system.config.max_concurrent_runs} slot(s)`)}
+  ${panel("Live batches", t, `${p.batches.length} non-terminal · ${p.upstream_open}/${p.upstream_cap} upstream PRs open · click a row for its items`)}</section>`;
+}
+
+function historySection(d) {
+  const h = d.history, rows = h.daily;
+  // `stacked: false` for independent measures side by side; stacked only where the series
+  // are parts of one whole
+  const charts = [
+    {title: "Upstream PRs merged per day", series: [{k: "upstream_merged", label: "upstream PRs merged", color: "var(--s1)"}]},
+    {title: "Backports merged per day", series: [{k: "backports_merged", label: "backports merged", color: "var(--s3)"}]},
+    {title: "Batches per day", stacked: false, series: [{k: "batches_proposed", label: "proposed", color: "var(--s1)"}, {k: "batches_approved", label: "approved", color: "var(--s2)"}, {k: "batches_closed", label: "closed / abandoned", color: "var(--s3)"}]},
+    {title: "Runs finished per day", series: [{k: "runs_done", label: "done", color: "var(--s1)"}, {k: "runs_failed", label: "failed", color: "var(--s2)"}, {k: "runs_cancelled", label: "cancelled", color: "var(--s3)"}, {k: "runs_paused", label: "paused", color: "var(--s4)"}, {k: "runs_timed_out", label: "timed out", color: "var(--s5)"}]},
+    {title: "Lane spend per day", fmt: usd, axis: v => "$" + axisNum(v), series: [{k: "cost_usd", label: "cost", color: "var(--s1)"}]},
+    {title: "Items dropped per day", series: [{k: "items_dropped", label: "items dropped", color: "var(--s2)"}]},
+  ];
+  const cs = charts.map((spec, i) => {
+    const series = spec.series.filter(s => h.series.includes(s.k));
+    return panel(spec.title, series.length ? chart("h" + i, {...spec, rows, series}) : `<div class="muted">no data</div>`, `last ${rows.length} days`);
+  });
+  const t = tbl("history", {
+    rows: h.batches, key: b => b.id, sort: "ended_at", desc: true, search: "Filter history…", limit: 30,
+    filters: [{k: "status", label: "status"}, {k: "version", label: "version"}],
+    cols: [
+      {k: "id", label: "batch", num: true},
+      {k: "name", label: "name", f: b => esc(b.name) + (b.track ? " " + pill(b.track) : "")},
+      {k: "status", label: "status", f: b => sp("batch", b.status)},
+      {k: "landed", label: "landed", num: true, f: b => `${num(b.landed)} <span class="muted">/ ${num(b.items)}</span>`},
+      {k: "upstream_pr", label: "links", f: b => batchLinks(b, " · ")},
+      {k: "why", label: "outcome", cls: "w", f: b => linkRefs(b.why || "")},
+      {k: "created_at", label: "created", f: b => when(b.created_at)},
+      {k: "ended_at", label: "ended", f: b => when(b.ended_at)},
+      {k: "cost_usd", label: "spent", num: true, f: b => usd(b.cost_usd)},
+    ],
+  });
+  const tc = h.terminal_counts;
+  return `<section class="sec" id="history"><h2>History</h2><div class="grid2">${cs.join("")}</div>
+  ${panel("Merged and closed batches", t, `latest ${h.batches.length} · all time: ${Object.entries(tc).map(([a, b]) => `${esc(a)} ${b}`).join(", ")}`)}</section>`;
+}
+
+function runsPanels(d) {
+  const r = d.runs;
+  const bd = w => { const b = r.breakdown[w]; return `<h4>${esc(w === "all" ? "all time" : "last " + w)}</h4><div>${Object.entries(b.status).map(([s, n]) => `${sp("run", s)} ${num(n)}`).join(" &nbsp;")}</div>${Object.keys(b.fail_kind).length ? `<div class="muted" style="margin-top:4px;font-size:12px">fail kinds: ${Object.entries(b.fail_kind).map(([s, n]) => `${esc(s)} ${n}`).join(" · ")}</div>` : ""}`; };
+  const durs = table(["kind", "#runs", "#p50", "#p90", "#mean", "#max"], r.durations_30d.map(x => [cell(esc(x.kind)), ncell(num(x.n)), ncell(dur(x.p50_s)), ncell(dur(x.p90_s)), ncell(dur(x.mean_s)), ncell(dur(x.max_s))]));
+  const ks = r.breakdown["30d"].kind_status, kinds = [...new Set(ks.map(x => x.kind))], stats = [...new Set(ks.map(x => x.status))];
+  const kindStatus = `<h4>runs by kind and status, last 30 d</h4>` + table(["kind", ...stats.map(s => "#" + s)], kinds.map(k => [cell(esc(k)), ...stats.map(s => { const x = ks.find(y => y.kind === k && y.status === s); return ncell(x ? num(x.n) : '<span class="muted">·</span>'); })]));
+  const recent = tbl("runs", {
+    rows: r.recent, sort: "id", desc: true, search: "Filter runs…", limit: 40,
+    filters: [{k: "kind", label: "kind"}, {k: "status", label: "status"}],
+    cols: [
+      {k: "id", label: "run", num: true},
+      {k: "batch_id", label: "batch", f: x => `${esc(x.batch_id)} <span class="muted">${esc(short(x.batch, 34))}</span>`},
+      {k: "kind", label: "kind", f: x => `${esc(x.kind)} #${esc(x.attempt)}`},
+      {k: "status", label: "status", f: x => sp("run", x.status) + (x.fail_kind ? " " + pill(x.fail_kind, "bad") : "")},
+      {k: "reason", label: "reason / note", cls: "w", f: x => linkRefs(x.reason || x.note || "")},
+      {k: "started_at", label: "started", f: x => when(x.started_at)},
+      {k: "duration_s", label: "duration", num: true, f: x => x.duration_s !== null ? dur(x.duration_s) : `<span class="muted">${dur(ageS(x.started_at))}…</span>`},
+      {k: "lanes", label: "lanes", num: true},
+      {k: "cost_usd", label: "cost", num: true, f: x => usd(x.cost_usd)},
+    ],
+  });
+  return `<div class="grid3">${panel("Run outcomes", bd("24h") + bd("7d") + bd("30d") + bd("all"))}<div style="grid-column:span 2">${panel("Run durations", durs + kindStatus, "completed runs, last 30 d")}</div></div>
+  ${panel("Recent runs", recent, `last ${r.recent.length}`)}`;
+}
+function lanesPanels(d) {
+  const L = d.lanes;
+  const tot = w => { const t = L.totals[w]; return card(w === "all" ? "Lanes, all time" : "Lanes, " + w, usd(t.cost_usd), `${num(t.lanes)} lanes · ${tok(t.tokens_in)} in / ${tok(t.tokens_out)} out · ${fix(t.avg_turns, 1)} turns avg`); };
+  const byTable = (dim, w) => table([dim, "#lanes", "#tokens in", "#tokens out", "#cost", "#avg cost", "#avg turns"], (L.by[dim][w] || []).map(x => [cell(esc(x[dim])), ncell(num(x.lanes)), ncell(tok(x.tokens_in)), ncell(tok(x.tokens_out)), ncell(usd(x.cost_usd)), ncell(usd(x.avg_cost_usd)), ncell(fix(x.avg_turns, 1))]));
+  // per day by role: cost and tokens, each a part-of-whole stack of one measure
+  const roles = [...new Set(L.daily.map(x => x.role))].sort();
+  const dayMap = {};
+  for (const x of L.daily) { const m = dayMap[x.day] || (dayMap[x.day] = {day: x.day}); m[x.role] = (m[x.role] || 0) + x.cost_usd; m["t:" + x.role] = (m["t:" + x.role] || 0) + x.tokens_in + x.tokens_out; }
+  const days = d.history.daily.slice(-30).map(x => dayMap[x.day] || {day: x.day});
+  const roleSeries = roles.map((ro, i) => ({k: ro, label: ro, color: SERIES[i % SERIES.length]}));
+  const tokSeries = roles.map((ro, i) => ({k: "t:" + ro, label: ro, color: SERIES[i % SERIES.length]}));
+  const st = table(["role", "status", "subtype", "#lanes"], L.status.map(x => [cell(esc(x.role)), cell(esc(x.status)), cell(esc(x.subtype || "—")), ncell(num(x.n))]));
+  return `<div class="cards">${tot("24h")}${tot("7d")}${tot("30d")}${tot("all")}</div>
+  <div class="cards">${card("Cost per landed backport", usd(L.cost_per_landed_usd), `${num(L.landed_distinct)} distinct upstream PRs landed in any batch`)}${card("Cost per merged backport", usd(L.cost_per_merged_usd), `${num(L.merged_backports)} backports in merged upstream PRs`)}</div>
+  <div class="grid2">${panel("Lane cost per day by role", chart("lcost", {rows: days, series: roleSeries, fmt: usd, axis: v => "$" + axisNum(v), title: "lane cost per day"}), "last 30 days")}${panel("Lane tokens per day by role", chart("ltok", {rows: days, series: tokSeries, fmt: tok, title: "lane tokens per day"}), "input + output, last 30 days")}</div>
+  <div class="grid2">${panel("By role", byTable("role", "30d") + `<h4>all time</h4>` + byTable("role", "all"), "last 30 days")}${panel("By model", byTable("model", "30d") + `<h4>all time</h4>` + byTable("model", "all") + `<h4>by effort, all time</h4>` + byTable("effort", "all"), "last 30 days")}</div>
+  ${panel("Lane status", st, "all time")}`;
+}
+function gatesPanels(d) {
+  const G = d.gates, gw = ["7d", "30d", "all"];
+  const gates = table(["gate", ...gw.map(w => w === "all" ? "all time" : w)], G.gates.map(g => [cell(esc(g)), ...gw.map(w => { const c = G.counts[g][w] || {}; return cell(sum(c) ? stack(c, GATE_COLORS) + `<span class="muted" style="font-size:11px">${num(c.pass || 0)} pass · ${num(c.warn || 0)} warn · ${num(c.fail || 0)} fail</span>` : '<span class="muted">—</span>', "w"); })]));
+  const gf = tbl("gatefail", {
+    rows: G.recent_failures, sort: "at", desc: true, search: "Filter failures…", limit: 15,
+    filters: [{k: "gate", label: "gate"}],
+    cols: [
+      {k: "at", label: "when", f: x => when(x.at)}, {k: "gate", label: "gate", f: x => pill(x.gate, "bad")},
+      {k: "number", label: "upstream", f: x => x.number ? btc(x.number) : "—"}, {k: "batch_id", label: "batch", num: true},
+      {k: "detail", label: "detail", cls: "w", f: x => linkRefs(x.detail)},
+    ],
+  });
+  return `${panel("Gates", gates, "results recorded by code; every merge and promote decision reads these")}${panel("Recent gate failures", gf)}`;
+}
+function ciPanels(d) {
+  const C = d.ci;
+  const ccl = w => { const by = {}; for (const x of C.conclusions[w]) (by[x.repo] ||= {})[x.conclusion] = x.n; return Object.entries(by).map(([repo, c]) => `<div class="vrow"><div class="hd"><b>${esc(repo)}</b><span class="muted">${Object.entries(c).map(([a, b]) => `${esc(a)} ${num(b)}`).join(" · ")}</span></div>${stack(c, CI_COLORS)}</div>`).join("") || `<div class="muted">no checks observed</div>`; };
+  const failing = table(["check", "repo", "#failures", "#heads", "last"], C.top_failing_30d.map(x => [cell(esc(x.name), "w"), cell(esc(x.repo), "nw"), ncell(num(x.failures)), ncell(num(x.heads)), cell(when(x.last_at))]), "no failures");
+  const classes = C.failure_classes_30d.length ? `<h4>failure classification, 30 d</h4>` + C.failure_classes_30d.map(x => metric(`${esc(x.repo)} · ${esc(x.classification)}`, num(x.n))).join("") : "";
+  const ciSeries = C.daily_kinds.map((k, i) => ({k, label: k, color: SERIES[i % SERIES.length]}));
+  const cierr = C.recent_errors.map(e => metric(`${when(e.ts)} ${esc(e.kind)}${e.batch_id ? " · batch " + e.batch_id : ""}`, `<span style="font-weight:400;font-size:12px">${esc(e.detail)}</span>`)).join("") || `<div class="muted">none</div>`;
+  return `<div class="grid2">${panel("CI check conclusions, 7 d", ccl("7d") + `<h4>30 d</h4>` + ccl("30d"))}${panel("Most frequent failing checks", failing + classes, "last 30 days")}</div>
+  <div class="grid2">${panel("CI events per day", chart("ci", {rows: C.daily, series: ciSeries, title: "ci events per day"}), "last 30 days")}${panel("Recent CI / sync errors", cierr)}</div>`;
+}
+function runsSection(d) {
+  return `<section class="sec" id="runs"><h2>Runs &amp; lanes</h2>${runsPanels(d)}${lanesPanels(d)}${gatesPanels(d)}${ciPanels(d)}</section>`;
+}
+
+function quota(d) {
+  const h = d.headroom, v = h.verdict, th = h.thresholds;
+  const verdict = v ? `<div class="big" style="color:${v.open ? "var(--green)" : "var(--amber)"}">${v.open ? "OPEN" : "CLOSED"}</div><div class="muted" style="margin:4px 0 10px">${esc(v.reason)} · evaluated ${when(v.at)}</div>
+  ${metric("fleet excess (projected unused weekly fraction)", `${fix(v.total_excess)} <span class="muted">/ open ≥ ${fix(th.min_excess)}, stays open ≥ ${fix(th.close_excess)}</span>`)}
+  ${metric("usable seats", `${num(v.usable)} <span class="muted">/ need ${th.min_usable}</span>`)}
+  ${metric("5 h cap for the bot", pct(th.cap5_bot))}${metric("balancer drain target", pct(th.balancer_target))}${metric("sample max age", th.sample_max_age_minutes + " min")}` : `<div class="muted">no verdict recorded yet</div>`;
+  const seatName = s => cell(`<b>${esc(s.seat)}</b>${s.fallback ? " " + pill("fallback", "muted") : ""}`, "nw");
+  const seatsV = v ? table(["seat", "usable", "#left 7 d", "#days to reset", "#burn / day", "#excess", "reason"], v.seats.map(s => [seatName(s), cell(s.usable ? pill("usable", "ok") : pill("no", "muted")), ncell(pct(s.remaining7)), ncell(fix(s.days_to_reset, 1)), ncell(pct(s.burn_per_day, 1)), ncell(fix(s.excess7)), cell(esc(s.reason))])) : "";
+  // timeline strip: open spans over the window
+  const t0 = ms(h.window_start), t1 = Date.parse(d.generated_at), span = Math.max(1, t1 - t0);
+  let state = h.start_open, cur = t0, segs = "";
+  const seg = (a, b) => { if (b > a) segs += `<span style="left:${(100 * (a - t0) / span).toFixed(3)}%;width:${(100 * (b - a) / span).toFixed(3)}%" data-tip="${esc(`<b>open</b> ${esc(abs(a))} → ${esc(abs(b))}<br>${esc(dur((b - a) / 1000))}`)}"></span>`; };
+  for (const tr of h.transitions) { const t = ms(tr.ts); if (state) seg(cur, t); cur = t; state = tr.open; }
+  if (state) seg(cur, t1);
+  const strip = `<div class="legend"><span><i style="background:var(--good)"></i>open</span><span><i style="background:var(--gray2)"></i>closed</span></div><div class="strip">${segs}</div><div class="axis"><span>${esc(abs(h.window_start).slice(0, 10))}</span><span>now</span></div>`;
+  const daily = table(["day", "#open", "#flips", "share"], h.daily_open.slice().reverse().map(x => [cell(esc(x.day), "nw"), ncell(x.open_pct === null ? "—" : x.open_pct.toFixed(0) + "%"), ncell(num(x.flips)), cell(`<div class="stack" style="height:10px;min-width:120px"><span style="flex:${x.open_pct || 0};background:var(--good)"></span><span style="flex:${100 - (x.open_pct || 0)};background:transparent"></span></div>`, "w")]));
+  const trans = h.transitions.slice().reverse().slice(0, 30).map(t => metric(`${when(t.ts)} ${t.open ? pill("opened", "ok") : pill("closed", "warn")}`, `<span style="font-weight:400;font-size:12px">${esc(t.reason)}</span>`)).join("") || `<div class="muted">no transitions in the window</div>`;
+  const seats = table(["seat", "#5 h", "#7 d", "#fable", "weekly use (7 d)", "5 h use (7 d)", "#weight", "opus", "status", "7 d resets", "sampled"], h.seats.map(s => { const hist = h.history[s.seat] || []; return [seatName(s), ncell(pct(s.u5)), ncell(pct(s.u7)), ncell(pct(s.ufable)), cell(spark(hist, 2, {color: "var(--s1)", label: s.seat + " weekly utilization"})), cell(spark(hist, 1, {color: "var(--s2)", cap: th.cap5_bot, label: s.seat + " 5-hour utilization"})), ncell(num(s.weight) + (s.applied_weight !== null && s.applied_weight !== s.weight ? `<span class="muted">→${num(s.applied_weight)}</span>` : "")), cell(s.opus_listed === false || s.opus_excluded ? pill("excluded", "muted") : s.opus_ok ? pill("ok", "ok") : pill("no", "warn")), cell(`${esc(s.status)} <span class="muted">${esc(s.source)}</span>`), cell(when(s.reset7_at)), cell(when(s.sampled_at))]; }), "no seat sampled in the last day");
+  const b = h.balancer;
+  return `<section class="sec" id="quota"><h2>Quota &amp; headroom</h2>
+  <div class="grid2">${panel("Opus admission gate", verdict, "the bot spends only weekly budget the humans will not use")}${panel("Per-seat verdict", seatsV || `<div class="muted">—</div>`)}</div>
+  ${panel("Gate open/closed, last 14 days", strip + `<h4>share of each day open</h4>` + daily)}
+  ${panel("Seats now", seats, `latest sample per seat (aliased) · balancer ${b.enabled ? "on" : "off"}, last write ${when(b.last_at)}, ${b.refusals_7d} refusal(s) / ${b.write_failures_7d} write failure(s) in 7 d`)}
+  ${panel("Gate transitions", trans, "latest first")}</section>`;
+}
+
+function planner(d) {
+  const p = d.planner, m = p.map;
+  const mapInfo = metric("map base", m.base ? `<code>${esc(m.base)}</code>` : "—") + metric("map completed", when(m.at)) + metric("versions mapped", esc(m.versions || "—")) + metric("unmapped against that base", m.unmapped === null ? "—" : num(m.unmapped)) + metric("last plan tick", when(p.last_plan_at)) + metric("map run in flight", m.active ? `#${m.active.id} ${esc(m.active.status)} · ${esc(m.active.note)} · heartbeat ${when(m.active.heartbeat_at)}` : "none") + metric("prerequisites admitted", `24 h ${p.prerequisites.admitted["24h"]} · 7 d ${p.prerequisites.admitted["7d"]} · 30 d ${p.prerequisites.admitted["30d"]} · all ${p.prerequisites.admitted.all}`) + metric("prerequisite candidates", Object.entries(p.prerequisites.by_status).map(([a, b]) => `${esc(a)} ${b}`).join(" · "));
+  const runs = table(["#run", "status", "base", "result", "started", "#took"], m.runs.map(r => [ncell(num(r.id)), cell(sp("run", r.status)), cell(`<code>${esc(r.base)}</code>`), cell(esc(r.stats || r.reason || r.note), "w"), cell(when(r.started_at)), ncell(r.finished_at ? dur((ms(r.finished_at) - ms(r.started_at)) / 1000) : "…")]), "no map runs");
+  const blockers = table(["prerequisite", "status", "#gates", "title"], p.blockers.map(b => [cell(btc(b.prereq), "nw"), cell(sp("cand", b.status)), ncell(num(b.blocks)), cell(esc(b.title), "w")]));
+  const groups = ["blocked", "skipped", "batched", "planned", "pending", "irrelevant"].filter(s => p.reason_groups[s]).map(s => `<h4>${esc(s)}</h4>` + p.reason_groups[s].map(g => metric(esc(g.reason), num(g.n))).join("")).join("");
+  const escalTable = tbl("escal", {
+    rows: p.escalations, sort: "at", desc: true, search: "Filter escalations…", limit: 15,
+    cols: [{k: "root", label: "root", f: x => x.root ? btc(x.root) : "—"}, {k: "detail", label: "why the dependency walk stopped", cls: "w", f: x => linkRefs(x.detail)}, {k: "at", label: "last escalated", f: x => when(x.at)}],
+    empty: "No dependency escalations",
+  });
+  const cols = [
+    {k: "number", label: "upstream", f: x => btc(x.number, x.repo)},
+    {k: "title", label: "title", cls: "w", f: x => esc(x.title) + (x.for_roots.length ? `<br><span class="muted" style="font-size:12px">prerequisite for ${x.for_roots.map(n => "bitcoin#" + n).join(", ")}</span>` : "")},
+    {k: "version", label: "ver"},
+    {k: "status", label: "status", f: x => sp("cand", x.status) + (x.batch_id ? `<br><span class="muted">batch ${x.batch_id}</span>` : "")},
+    {k: "reason", label: "reason", cls: "w", f: x => linkRefs(x.reason || "")},
+    {k: "area", label: "area"},
+    {k: "lines", label: "lines", num: true, f: x => num(x.lines)},
+    {k: "conflicts", label: "conflicts", num: true, f: x => num(x.conflicts)},
+    {k: "drops", label: "drops", num: true, f: x => num(x.drops)},
+    {k: "provenance", label: "from"},
+    {k: "sheet_status", label: "sheet", f: x => esc(x.sheet_status || "—") + (x.notes ? `<br><span class="muted" style="font-size:12px">${esc(x.notes)}</span>` : "")},
+  ];
+  const cand = tbl("cands", {
+    rows: p.candidates, sort: "number", desc: false, search: "Search number, title, reason…", limit: 60,
+    filters: [{k: "status", label: "status"}, {k: "version", label: "version"}, {k: "provenance", label: "from"}],
+    text: x => [x.number, x.title, x.reason, x.area, x.status, x.sheet_status, x.notes, x.batch_id ? "batch " + x.batch_id : ""].join(" "),
+    cols,
+  });
+  return `<section class="sec" id="planner"><h2>Planner</h2>
+  <div class="grid2">${panel("Dependency map", mapInfo)}${panel("Top blockers", blockers, "prerequisites gating the most candidates")}</div>
+  <div class="grid2">${panel("Recent map runs", runs)}${panel("Why candidates are where they are", groups, "reasons grouped (numbers and refs folded)")}</div>
+  ${panel("Dependency escalations", escalTable, "roots whose prerequisite walk hit a skip, cycle or budget")}
+  ${panel("Candidates", cand, `every candidate not done (${p.candidates.length})${p.has_sheet_notes ? " · with sheet notes" : ""}`)}</section>`;
+}
+
+function events(d) {
+  const e = d.events;
+  const alerts = e.alerts_7d.map(a => metric(`${when(a.ts)}${a.batch_id ? " · batch " + a.batch_id : ""}`, `<span style="font-weight:400;font-size:12px">${linkRefs(a.detail)}</span>`)).join("") || `<div class="muted">No worker alerts in the last 7 days</div>`;
+  const feed = tbl("feed", {
+    rows: e.recent, sort: "id", desc: true, search: "Filter events…", limit: 60,
+    filters: [{k: "kind", label: "kind"}],
+    cols: [
+      {k: "id", label: "when", v: x => x.id, f: x => when(x.ts)},
+      {k: "kind", label: "kind", f: x => `<code>${esc(x.kind)}</code>`},
+      {k: "batch_id", label: "batch", num: true},
+      {k: "run_id", label: "run", num: true},
+      {k: "detail", label: "detail", cls: "w", f: x => linkRefs(x.detail)},
+    ],
+  });
+  const days = e.daily.days;
+  const hm = `<div class="scroll"><table class="hm"><thead><tr><th></th>${days.map(x => `<th>${esc(x.slice(8))}</th>`).join("")}<th class="n">${days.length} d</th></tr></thead><tbody>${e.daily.kinds.map(k => { const row = e.daily.counts[k], mx = Math.max(1, ...row); return `<tr><td class="k"><code>${esc(k)}</code></td>${row.map((n, i) => `<td style="background:${n ? `color-mix(in srgb,var(--s1) ${Math.round(15 + 70 * n / mx)}%,transparent)` : "transparent"}" data-tip="${esc(`<b>${esc(k)}</b><br>${esc(days[i])}: ${num(n)}`)}">${n ? (n > 999 ? Math.round(n / 1000) + "k" : n) : ""}</td>`).join("")}<td class="n" style="border:none;padding:0 6px">${num(row.reduce((a, b) => a + b, 0))}</td></tr>`; }).join("")}</tbody></table></div>`;
+  return `<section class="sec" id="events"><h2>Alerts &amp; events</h2>
+  ${panel("Worker alerts, last 7 days", alerts, `${e.alerts_7d.length}`)}
+  ${panel("Event feed", feed, `latest ${e.recent.length}, without ${e.feed_skips.join(", ")}`)}
+  ${panel("Events per day by kind", hm, `top ${e.daily.kinds.length} kinds · shading is per row · ${num(e.total_events)} events retained`)}</section>`;
+}
+
+/* ---- load / refresh ---- */
+function header() {
+  const d = S.d, age = ageS(d.generated_at) / 60, stale = age > STALE_MIN, health = d.health || {}, sys = d.system || {}, st = health.status || "down";
+  // a section the exporter could not build arrives as {"error": …}
+  const broken = Object.entries(d).filter(([, v]) => v && typeof v === "object" && !Array.isArray(v) && typeof v.error === "string").map(([k, v]) => `${k} (${v.error})`);
+  const el = $("#status");
+  if (stale) { el.textContent = "● STALE DATA"; el.className = "status bad"; }
+  else if (st === "ok") { el.textContent = "● OPERATIONAL"; el.className = "status"; }
+  else if (st === "degraded") { el.textContent = "● DEGRADED"; el.className = "status warn"; }
+  else { el.textContent = "● DOWN"; el.className = "status bad"; }
+  const fails = (health.checks || []).filter(c => c.level !== "ok").map(c => c.name);
+  $("#meta").innerHTML = `Data generated <span class="age${stale ? " bad" : ""}" title="${esc(abs(d.generated_at))}">${esc(ago(d.generated_at))}</span>${stale ? ` <span class="err">(older than ${STALE_MIN} min: the publisher or the daemon has stopped)</span>` : ""} · daemon seen ${when(health.daemon_seen_at)} · v${esc(sys.version)}${sys.release ? ` <code>${esc(String(sys.release.sha).slice(0, 10))}</code>` : ""} · schema ${esc(sys.db_schema)}${fails.length ? ` · attention: ${fails.map(esc).join(", ")}` : ""}${broken.length ? ` · <span class="err">export errors: ${esc(broken.join("; "))}</span>` : ""}${S.err ? ` · <span class="err">last refresh failed: ${esc(S.err)}</span>` : ""}`;
+  $("#updated").textContent = "Generated " + abs(d.generated_at);
+}
+function render() {
+  const d = S.d;
+  const focused = document.activeElement && document.activeElement.classList && document.activeElement.classList.contains("tbl-q") ? document.activeElement.dataset.id : null;
+  const y = scrollY;
+  S.charts = {};
+  const parts = [["overview", overview], ["pipeline", pipeline], ["history", historySection], ["runs", runsSection], ["quota", quota], ["planner", planner], ["events", events]];
+  $("#app").innerHTML = parts.map(([id, fn]) => { try { return fn(d); } catch (e) { console.error(id, e); return `<section class="sec" id="${id}"><h2>${esc(id)}</h2><div class="panel err">could not render: ${esc(e.message)}</div></section>`; } }).join("");
+  header();
+  drawCharts();
+  scrollTo(0, y);
+  if (focused) { const i = document.querySelector(`.tbl-q[data-id="${focused}"]`); if (i) { i.focus(); i.setSelectionRange(i.value.length, i.value.length); } }
+}
+async function load() {
+  try {
+    const r = await fetch("data/status.json?t=" + Date.now(), {cache: "no-store"});
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    S.d = await r.json(); S.err = null;
+  } catch (e) {
+    S.err = e.message || String(e);
+    if (!S.d) { $("#status").textContent = "● DATA UNAVAILABLE"; $("#status").className = "status bad"; $("#meta").innerHTML = `<span class="err">Unable to load data/status.json: ${esc(S.err)}</span>`; return; }
+  }
+  render();
+}
+load(); setInterval(load, REFRESH_MS);
+</script>
+</body>
+</html>
